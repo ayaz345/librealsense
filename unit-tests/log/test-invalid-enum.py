@@ -8,7 +8,7 @@ import common
 
 #############################################################################################
 #
-test.start( f"Logging with invalid enum" )
+test.start("Logging with invalid enum")
 
 try:
     rs.log_to_callback( rs.log_severity.debug, common.message_counter )

@@ -19,13 +19,12 @@ def test_around( median, plus_minus, reps = 50, sets = 10 ):
     """
     test.start( f"double, {median} +/- {plus_minus}" )
 
-    for s in range(sets):
+    for _ in range(sets):
         avg = running_average()
         tot = 0.
-        log.d( f" #  value        | average      | expected" )
-        for r in range(reps):
-            d = random.random()  # [0,1)
-            d -= 0.5  # [-0.5,0.5)
+        log.d(" #  value        | average      | expected")
+        for _ in range(reps):
+            d = random.random() - 0.5
             d *= 2    # [-1,1)
             d *= plus_minus
             d += median

@@ -127,7 +127,13 @@ def find_devices_by_product_line_or_exit( product_line ):
     devices_list = c.query_devices(product_line)
     if devices_list.size() == 0:
         log.f( "No device of the", product_line, "product line was found" )
-    log.d( 'found', devices_list.size(), product_line, 'devices:', [dev for dev in devices_list] )
+    log.d(
+        'found',
+        devices_list.size(),
+        product_line,
+        'devices:',
+        list(devices_list),
+    )
     log.d( 'in', rs )
     return devices_list
 
@@ -296,13 +302,11 @@ def check_equal_lists(result, expected, abort_if_failed = False):
         failed = True
         log.out("Check equal lists failed due to lists of different sizes:")
         log.out("The resulted list has", len(result), "elements, but the expected list has", len(expected), "elements")
-    i = 0
-    for res, exp in zip(result, expected):
+    for i, (res, exp) in enumerate(zip(result, expected)):
         if res != exp:
             failed = True
             log.out("Check equal lists failed due to unequal elements:")
             log.out("The element of index", i, "in both lists was not equal")
-        i += 1
     if failed:
         print_stack()
         log.out( "    result list  :", result )
@@ -341,7 +345,7 @@ def check_throws( _lambda, expected_type, expected_msg = None, abort_if_failed =
     We expect the lambda, when called, to raise an exception!
     """
     if not callable( _lambda ):
-        raise RuntimeError( "expecting a function, not " + _lambda )
+        raise RuntimeError(f"expecting a function, not {_lambda}")
     try:
         _lambda()
     except Exception as e:
@@ -500,5 +504,7 @@ def print_results_and_exit():
         log.out("test cases:", n_tests, "|" , n_failed_tests,  "failed")
         log.out("assertions:", n_assertions, "|", passed, "passed |", n_failed_assertions, "failed")
         sys.exit(1)
-    log.out("All tests passed (" + str(n_assertions) + " assertions in " + str(n_tests) + " test cases)")
+    log.out(
+        f"All tests passed ({str(n_assertions)} assertions in {str(n_tests)} test cases)"
+    )
     sys.exit(0)

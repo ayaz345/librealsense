@@ -22,7 +22,12 @@ L515_FW_VER_REQUIRED = '01.04.01.00'
 
 is_data = None
 get_key = None
-if os.name == 'posix':
+if os.name == 'nt':
+    import msvcrt
+    is_data = msvcrt.kbhit
+    get_key = lambda : msvcrt.getch()
+
+elif os.name == 'posix':
     import select
     import tty
     import termios
@@ -30,13 +35,8 @@ if os.name == 'posix':
     is_data = lambda : select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], [])
     get_key = lambda : sys.stdin.read(1)
 
-elif os.name == 'nt':
-    import msvcrt
-    is_data = msvcrt.kbhit
-    get_key = lambda : msvcrt.getch()
-
 else:
-    raise Exception('Unsupported OS: %s' % os.name)
+    raise Exception(f'Unsupported OS: {os.name}')
 
 if sys.version_info[0] < 3:
     input = raw_input
@@ -47,7 +47,7 @@ max_uint8 = struct.unpack('B', b'\xff')[0]
 
 g = 9.80665 # SI Gravity page 52 of https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication330e2008.pdf
 
-COLOR_RED   = "\033[1;31m"  
+COLOR_RED   = "\033[1;31m"
 COLOR_BLUE  = "\033[1;34m"
 COLOR_CYAN  = "\033[1;36m"
 COLOR_GREEN = "\033[0;32m"
@@ -61,7 +61,7 @@ def int_to_bytes(num, length=4, order='big'):
         res[i] = num & 0xff
         num >>= 8
     if num:
-        raise OverflowError("Number {} doesn't fit into {} bytes.".format(num, length))
+        raise OverflowError(f"Number {num} doesn't fit into {length} bytes.")
     if order == 'little':
         res.reverse()
     return res
@@ -70,10 +70,7 @@ def int_to_bytes(num, length=4, order='big'):
 def bytes_to_uint(bytes_array, order='little'):
     bytes_array = list(bytes_array)
     bytes_array.reverse()
-    if order == 'little':
-        return struct.unpack('>i', struct.pack('BBBB', *([0] * (4 - len(bytes_array))) + bytes_array))[0] & 0xffffffff
-    else:
-        return struct.unpack('>i', struct.pack('BBBB', *([0] * (4 - len(bytes_array))) + bytes_array))[0] & 0xffffffff
+    return struct.unpack('>i', struct.pack('BBBB', *([0] * (4 - len(bytes_array))) + bytes_array))[0] & 0xffffffff
 
 
 class imu_wrapper:
@@ -196,7 +193,7 @@ class imu_wrapper:
                         return
                 return
             except Exception as e:
-                print('ERROR?' + str(e))
+                print(f'ERROR?{str(e)}')
                 self.thread.acquire()
                 self.status = self.Status.idle
                 self.thread.notify()
@@ -229,13 +226,13 @@ class imu_wrapper:
         try:
             self.pipeline.start(cfg)
         except Exception as e:
-            print('ERROR: ', str(e))
+            print('ERROR: ', e)
             return False
 
         # self.sync_imu_by_this_stream = rs.stream.any
         active_imu_profiles = []
 
-        active_profiles = dict()
+        active_profiles = {}
         self.imu_sensor = None
         for sensor in self.pipeline.get_active_profile().get_device().sensors:
             for pr in sensor.get_stream_profiles():
@@ -250,7 +247,14 @@ class imu_wrapper:
         if not self.imu_sensor:
             print('No IMU sensor found.')
             return False
-        print('\n'.join(['FOUND %s with fps=%s' % (str(ap[0]).split('.')[1].upper(), ap[1].fps()) for ap in active_profiles.items()]))
+        print(
+            '\n'.join(
+                [
+                    f"FOUND {str(ap[0]).split('.')[1].upper()} with fps={ap[1].fps()}"
+                    for ap in active_profiles.items()
+                ]
+            )
+        )
         active_imu_profiles = list(active_profiles.values())
         if len(active_imu_profiles) < 2:
             print('Not all IMU streams found.')
@@ -461,7 +465,14 @@ def get_debug_device(serial_no):
             found_dev = True
             break
     if not found_dev:
-        print('No RealSense device found' + str('.' if len(serial_no) == 0 else ' with serial number: '+serial_no))
+        print(
+            'No RealSense device found'
+            + str(
+                '.'
+                if len(serial_no) == 0
+                else f' with serial number: {serial_no}'
+            )
+        )
         return 0
 
     # print(a few basic information about the device)
@@ -469,8 +480,7 @@ def get_debug_device(serial_no):
     print('  Device name: ',  dev.get_info(rs.camera_info.name))
     print('  Serial number: ',  dev.get_info(rs.camera_info.serial_number))
     print('  Firmware version: ',  dev.get_info(rs.camera_info.firmware_version))
-    debug = rs.debug_protocol(dev)
-    return debug
+    return rs.debug_protocol(dev)
 
 def check_X(X, accel, show_graph):
     fdata = np.apply_along_axis(np.dot, 1, accel, X[:3,:3]) - X[3,:]
@@ -509,8 +519,7 @@ def l500_send_command(dev, op_code, param1=0, param2=0, param3=0, param4=0, data
             res = debug_device.send_and_receive_raw_data(buf)
 
             if res[0] == op_code:
-                res1 = res[4:]
-                return res1
+                return res[4:]
             else:
                 raise Exception("send_command return error", res[0])
         except:
@@ -541,11 +550,16 @@ def wait_for_rs_device(serial_no):
                 return dev
         time.sleep(5)
         now = int(round(time.time() * 1000))
-    raise Exception('No RealSense device' + str('.' if len(serial_no) == 0 else ' with serial number: '+serial_no))
+    raise Exception(
+        'No RealSense device'
+        + str(
+            '.' if len(serial_no) == 0 else f' with serial number: {serial_no}'
+        )
+    )
 
 
 def main():
-    if any([help_str in sys.argv for help_str in ['-h', '--help', '/?']]):
+    if any(help_str in sys.argv for help_str in ['-h', '--help', '/?']):
         print("Usage:", sys.argv[0], "[Options]")
         print
         print('[Options]:')
@@ -580,9 +594,11 @@ def main():
             print('checking minimum firmware requirement ...')
             fw_version = dev.get_info(rs.camera_info.firmware_version)
             if fw_version < L515_FW_VER_REQUIRED:
-                raise Exception('L515 requires firmware ' + L515_FW_VER_REQUIRED + " or later to support IMU calibration. Please upgrade firmware and try again.")
+                raise Exception(
+                    f'L515 requires firmware {L515_FW_VER_REQUIRED} or later to support IMU calibration. Please upgrade firmware and try again.'
+                )
             else:
-                print('  firmware ' + fw_version + ' passed check.')
+                print(f'  firmware {fw_version} passed check.')
 
         buckets = [[0, -g,  0], [ g,  0, 0],
                 [0,  g,  0], [-g,  0, 0],
@@ -647,8 +663,8 @@ def main():
             header = input('\nWould you like to save the raw data? Enter footer for saving files (accel_<footer>.txt and gyro_<footer>.txt)\nEnter nothing to not save raw data to disk. >')
             print('\n')
             if header:
-                accel_file = 'accel_%s.txt' % header
-                gyro_file = 'gyro_%s.txt' % header
+                accel_file = f'accel_{header}.txt'
+                gyro_file = f'gyro_{header}.txt'
                 print('Writing files:\n%s\n%s' % (accel_file, gyro_file))
                 np.savetxt(accel_file, con_mm, delimiter=',', fmt='%s')
                 np.savetxt(gyro_file, gyro, delimiter=',', fmt='%s')
@@ -688,17 +704,14 @@ def main():
         print("singular:", singular)
         check_X(X, w[:,:3], show_graph)
 
-        calibration = {}
+        calibration = {
+            "device_type": "L515" if product_line == 'L500' else "D435i",
+            "imus": [{}],
+        }
 
-        if product_line == 'L500':
-            calibration["device_type"] = "L515"
-        else:
-            calibration["device_type"] = "D435i"
-
-        calibration["imus"] = list()
-        calibration["imus"].append({})
-        calibration["imus"][0]["accelerometer"] = {}
-        calibration["imus"][0]["accelerometer"]["scale_and_alignment"] = X.flatten()[:9].tolist()
+        calibration["imus"][0]["accelerometer"] = {
+            "scale_and_alignment": X.flatten()[:9].tolist()
+        }
         calibration["imus"][0]["accelerometer"]["bias"] = X.flatten()[9:].tolist()
         calibration["imus"][0]["gyroscope"] = {}
         calibration["imus"][0]["gyroscope"]["scale_and_alignment"] = np.eye(3).flatten().tolist()

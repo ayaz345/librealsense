@@ -8,7 +8,7 @@ import common
 
 #############################################################################################
 #
-test.start( f"Logging to two callbacks" )
+test.start("Logging to two callbacks")
 
 try:
     rs.log_to_callback( rs.log_severity.error, common.message_counter )

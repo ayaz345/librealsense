@@ -37,7 +37,7 @@ def set_and_verify_timestamp_domain(sensor, frame_queue, global_time_enabled: bo
 
     test.check_equal(sensor.get_option(rs.option.global_time_enabled), global_time_enabled)
 
-    test.info(str(frame.get_profile().stream_type()) + " frame", frame)
+    test.info(f"{str(frame.get_profile().stream_type())} frame", frame)
     test.check_equal(frame.get_frame_timestamp_domain(), expected_ts_domain)
 
 

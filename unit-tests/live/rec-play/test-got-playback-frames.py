@@ -24,10 +24,7 @@ color_sensor = dev.first_color_sensor()
 # The test also checks frame drops, therefore D400-specific relaxation must apply
 # The follow code is borrowed fro test-drops-on-set.py and later can be merged/refactored
 product_line = dev.get_info(rs.camera_info.product_line)
-is_d400 = False
-if product_line == "D400":
-    is_d400 = True   # Allow for frame counter reset while streaming
-
+is_d400 = product_line == "D400"
 # Our KPI is to prevent sequential frame drops, therefore single frame drop is allowed.
 allowed_drops = 1
 

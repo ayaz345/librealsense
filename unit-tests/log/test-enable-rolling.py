@@ -12,7 +12,7 @@ temp_dir = tempfile.gettempdir()
 
 #############################################################################################
 #
-test.start( f"Rolling logger (max 1M)" )
+test.start("Rolling logger (max 1M)")
 
 try:
     log_filename = os.path.join( temp_dir, 'rolling.log' )
@@ -31,7 +31,7 @@ try:
     del log_file
     log.d( f'{log_filename} size: {log_size}' )
 
-    old_filename = log_filename + ".old"
+    old_filename = f"{log_filename}.old"
     with open( old_filename, "rb" ) as old_file:
         old_file.seek( 0, 2 )  # 0 bytes from end
         old_size = old_file.tell()

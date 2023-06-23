@@ -9,7 +9,7 @@ import tempfile, os.path
 
 #############################################################################################
 #
-test.start( f"Double file logging" )
+test.start("Double file logging")
 
 try:
     filename1 = tempfile.mktemp()

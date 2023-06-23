@@ -8,7 +8,7 @@ import common
 
 #############################################################################################
 #
-test.start( f"log warning" )
+test.start("log warning")
 
 try:
     rs.log_to_callback( rs.log_severity.warn, common.message_counter )

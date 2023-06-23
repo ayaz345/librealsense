@@ -47,10 +47,8 @@ def find_pyrs_dir():
     """
     :return: the directory (absolute) in which pyrealsense2 lives, or None if unknown/not found
     """
-    pyrs = find_pyrs()
-    if pyrs:
-        pyrs_dir = os.path.dirname( pyrs )
-        return pyrs_dir
+    if pyrs := find_pyrs():
+        return os.path.dirname( pyrs )
 
 
 def find_built_exe( source, name ):

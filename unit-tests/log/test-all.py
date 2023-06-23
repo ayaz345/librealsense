@@ -8,7 +8,7 @@ import common
 
 #############################################################################################
 #
-test.start( f"log all" )
+test.start("log all")
 
 try:
     # debug severity include all log messages

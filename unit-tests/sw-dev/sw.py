@@ -80,7 +80,7 @@ class sensor:
         f = self._q.poll_for_frame()
         # NOTE: f will never be None
         if not f:
-            raise RuntimeError( f'expected a frame but got none' )
+            raise RuntimeError('expected a frame but got none')
         log.d( "Got", f )
         return f
 

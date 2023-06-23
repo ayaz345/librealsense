@@ -83,7 +83,7 @@ test.start( "update stable value" )
 try:
     sv = stabilized_value( 10 )
     # Verify flickering value always report the stable value
-    for i in range(100):
+    for _ in range(100):
         sv.add( 55. )
         sv.add( 60. )
         test.check_equal( sv.get( 0.7 ), 55. )

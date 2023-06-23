@@ -25,7 +25,7 @@ sys.path = [p for p in sys.path if not file.is_inside( p, getusersitepackages() 
 
 def usage():
     ourname = os.path.basename( sys.argv[0] )
-    print( 'Syntax: ' + ourname + ' [options] [dir]' )
+    print(f'Syntax: {ourname} [options] [dir]')
     print( '        dir: location of executable tests to run' )
     print( 'Options:' )
     print( '        --debug              Turn on debugging information (does not include LibRS debug logs; see --rslog)' )
@@ -66,11 +66,7 @@ def usage():
 # get os and directories for future use
 # NOTE: WSL will read as 'Linux' but the build is Windows-based!
 system = platform.system()
-if system == 'Linux' and "microsoft" not in platform.release().lower():
-    linux = True
-else:
-    linux = False
-
+linux = system == 'Linux' and "microsoft" not in platform.release().lower()
 # Parse command-line:
 try:
     opts, args = getopt.getopt( sys.argv[1:], 'hvqr:st:',
@@ -196,18 +192,10 @@ if pyrs_path:
     log.d( 'found python libraries in:', pyd_dirs )
     if not exe_dir:
         build_dir = find_build_dir( pyrs_path )
-        if linux:
-            exe_dir = build_dir
-        else:
-            exe_dir = pyrs_path
-
+        exe_dir = build_dir if linux else pyrs_path
 # Try to assume exe directory from inside build directory. Only works if there is only one location with tests
 if not exe_dir and build_dir:
-    mask = r'(^|/)test-[^/.]*'
-    if linux:
-        mask += r'$'
-    else:
-        mask += r'\.exe'
+    mask = r'(^|/)test-[^/.]*' + (r'$' if linux else r'\.exe')
     for executable in file.find( build_dir, mask ):
         executable = os.path.join( build_dir, executable )
         #log.d( 'found exe=', executable )
@@ -242,7 +230,7 @@ def configuration_str( configuration, repetition = 1, prefix = '', suffix = '' )
     if configuration is not None:
         s += '[' + ' '.join( configuration ) + ']'
     if repetition:
-        s += '[' + str(repetition+1) + ']'
+        s += f'[{str(repetition + 1)}]'
     if s:
         s = prefix + s + suffix
     return s
@@ -262,11 +250,7 @@ def check_log_for_fails( path_to_log, testname, configuration = None, repetition
     for ctx in file.grep( r'^test cases:\s*(\d+) \|\s*(\d+) (passed|failed)|^----------TEST-SEPARATOR----------$',
                           path_to_log ):
         m = ctx['match']
-        if m.string == "----------TEST-SEPARATOR----------":
-            results = None
-        else:
-            results = m
-
+        results = None if m.string == "----------TEST-SEPARATOR----------" else m
     if not results:
         return False
 
@@ -279,7 +263,7 @@ def check_log_for_fails( path_to_log, testname, configuration = None, repetition
         if total == 1 or passed == 0:
             desc = 'failed'
         else:
-            desc = str( total - passed ) + ' of ' + str( total ) + ' failed'
+            desc = f'{str(total - passed)} of {total} failed'
 
         if log.is_verbose_on():
             log.e( log.red + testname + log.reset + ': ' + configuration_str( configuration, repetition, suffix=' ' ) + desc )
@@ -303,8 +287,7 @@ def get_tests():
         # We want to list all tests, even if they weren't built.
         # So we look for the source files instead of using the manifest
         for cpp_test in file.find( current_dir, '(^|/)test-.*\.cpp' ):
-            testparent = os.path.dirname( cpp_test )  # "log/internal" <-  "log/internal/test-all.py"
-            if testparent:
+            if testparent := os.path.dirname(cpp_test):
                 testname = 'test-' + testparent.replace( '/', '-' ) + '-' + os.path.basename( cpp_test )[
                                                                             5:-4]  # remove .cpp
             else:
@@ -323,9 +306,7 @@ def get_tests():
         for manifest_ctx in file.grep( r'(?<=unit-tests/build/)\S+(?=/CMakeFiles/test-\S+.dir$)', manifestfile ):
             # We need to first create the test name so we can see if it fits the regex
             testdir = manifest_ctx['match'].group( 0 )  # "log/internal/test-all"
-            # log.d( testdir )
-            testparent = os.path.dirname( testdir )  # "log/internal"
-            if testparent:
+            if testparent := os.path.dirname(testdir):
                 testname = 'test-' + testparent.replace( '/', '-' ) + '-' + os.path.basename( testdir )[
                                                                             5:]  # "test-log-internal-all"
             else:
@@ -346,8 +327,7 @@ def get_tests():
     # Python unit-test scripts are in the same directory as us... we want to consider running them
     # (we may not if they're live and we have no pyrealsense2.pyd):
     for py_test in file.find( current_dir, '(^|/)test-.*\.py' ):
-        testparent = os.path.dirname( py_test )  # "log/internal" <-  "log/internal/test-all.py"
-        if testparent:
+        if testparent := os.path.dirname(py_test):
             testname = 'test-' + testparent.replace( '/', '-' ) + '-' + os.path.basename( py_test )[5:-3]  # remove .py
         else:
             testname = os.path.basename( py_test )[:-3]
@@ -465,7 +445,9 @@ try:
                 log.d( f'{test.name} is marked do-not-run; skipping' )
                 continue
             #
-            if required_tags and not all( tag in test.config.tags for tag in required_tags ):
+            if required_tags and any(
+                tag not in test.config.tags for tag in required_tags
+            ):
                 log.d( f'{test.name} has {test.config.tags} which do not fit --tag {required_tags}; skipping' )
                 continue
             #
@@ -498,9 +480,12 @@ try:
             #
             if skip_live_tests:
                 if skip_disconnected:
-                    log.w( test.name + ':', 'is live & no cameras were found; skipping due to --skip-disconnected' )
+                    log.w(
+                        f'{test.name}:',
+                        'is live & no cameras were found; skipping due to --skip-disconnected',
+                    )
                 else:
-                    log.e( test.name + ':', 'is live and there are no cameras' )
+                    log.e(f'{test.name}:', 'is live and there are no cameras')
                 continue
             #
             test_ok = True
@@ -519,7 +504,7 @@ try:
                         log.debug_unindent()
             if not test_ok:
                 failed_tests.append( test )
-            #
+                    #
         finally:
             log.debug_unindent()
 
@@ -542,17 +527,19 @@ try:
         elif list_tests:
             for t in sorted( tests, key= lambda x: x.name ):
                 print( t.name )
-    #
     else:
-        n_errors = log.n_errors()
-        if n_errors:
-            log.out( log.red + str( n_errors ) + log.reset, 'of', n_tests, 'test(s)',
-                     log.red + 'failed!' + log.reset + log.clear_eos )
+        if n_errors := log.n_errors():
+            log.out(
+                log.red + str(n_errors) + log.reset,
+                'of',
+                n_tests,
+                'test(s)',
+                f'{log.red}failed!{log.reset}{log.clear_eos}',
+            )
             log.d( 'Failed tests:\n    ' + '\n    '.join( [test.name for test in failed_tests] ))
             sys.exit( 1 )
         #
-        log.out( str( n_tests ) + ' unit-test(s) completed successfully' + log.clear_eos )
-#
+        log.out(f'{str(n_tests)} unit-test(s) completed successfully{log.clear_eos}')
 finally:
     #
     # Disconnect from the Acroname -- if we don't it'll crash on Linux...

@@ -11,17 +11,18 @@ random.seed()  # seed random number generator
 def signed( n ):
     s = str(n)
     if n >= 0:
-        s = '+' + s
+        s = f'+{s}'
     return s
 
 
 def test_set( median, plus_minus, reps = 50 ):
     avg = running_average()
     tot = 0
-    log.d( f" #  value        | average                                                               | expected" )
-    for r in range(reps):
-        d = random.random()  # [0,1)
-        d -= 0.5  # [-0.5,0.5)
+    log.d(
+        " #  value        | average                                                               | expected"
+    )
+    for _ in range(reps):
+        d = random.random() - 0.5
         d *= 2    # [-1,1)
         d *= plus_minus
         d += median
@@ -33,7 +34,9 @@ def test_set( median, plus_minus, reps = 50 ):
         rounding = int(avg.size() / 2)
         if prev + lo < 0:
             rounding = -rounding
-        log.d( f"{avg.size():>3} {d:>12} | {str(prev)+'+('+signed(d-prev)+signed(lo)+signed(rounding)+')/'+str(avg.size()):>35}= {str(avg.get())+signed(avg.leftover()):>15}= {avg.get_double():>15.2f} | {tot / avg.size():>12.2f}" )
+        log.d(
+            f"{avg.size():>3} {d:>12} | {f'{str(prev)}+({signed(d - prev)}{signed(lo)}{signed(rounding)})/{str(avg.size())}':>35}= {str(avg.get()) + signed(avg.leftover()):>15}= {avg.get_double():>15.2f} | {tot / avg.size():>12.2f}"
+        )
     test.check_equal( avg.size(), reps )
     golden = tot / avg.size()
     test.check_approx_abs( avg.get(), golden, 1. )
@@ -53,7 +56,7 @@ def test_around( median, plus_minus, reps = 50, sets = 10 ):
     """
     test.start( f"int, {median} +/- {plus_minus}" )
 
-    for s in range(sets):
+    for _ in range(sets):
         # in case we want to reproduce, you can take the output, a tuple:
         #     random.setstate( (3, (...), None) )
         #     test_set(

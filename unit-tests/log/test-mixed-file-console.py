@@ -9,7 +9,7 @@ import tempfile, os.path
 
 #############################################################################################
 #
-test.start( f"Mixed file & console logging" )
+test.start("Mixed file & console logging")
 
 try:
     filename = tempfile.mktemp()

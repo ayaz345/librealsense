@@ -27,7 +27,7 @@ def is_contain_profile(profiles: dict, new_profile) -> bool:
     :returns: True if a type of profile is already in the list otherwise False
     """
     if new_profile:
-        for pr in profiles.keys():
+        for pr in profiles:
             if pr.stream_type() == new_profile.stream_type():
                 return True
     return False

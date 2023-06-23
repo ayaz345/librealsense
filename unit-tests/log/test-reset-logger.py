@@ -8,7 +8,7 @@ import common
 
 #############################################################################################
 #
-test.start( f"reset-logger" )
+test.start("reset-logger")
 
 try:
     rs.log_to_callback( rs.log_severity.info, common.message_counter )

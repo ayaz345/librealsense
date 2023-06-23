@@ -9,7 +9,7 @@ import tempfile, os.path
 
 #############################################################################################
 #
-test.start( f"Mixed file & callback logging" )
+test.start("Mixed file & callback logging")
 
 try:
     filename = tempfile.mktemp()
